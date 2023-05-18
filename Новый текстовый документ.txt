@@ -1,0 +1,107 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+
+#define MAX_WINDOW_SIZE 4096
+#define MAX_LOOKAHEAD_SIZE 18
+
+struct lz77_token {
+    unsigned short offset;
+    unsigned char length;
+    char next_char;
+};
+
+void print_usage() {
+    printf("Usage: lz77compress [-c|-d] -o output_file input_file\n");
+}
+
+int read_input(FILE *input_file, char *buffer, int max_size) {
+    int bytes_read = 0;
+    while (bytes_read < max_size) {
+        int ch = getc(input_file);
+        if (ch == EOF) {
+            break;
+        }
+        buffer[bytes_read++] = ch;
+    }
+    return bytes_read;
+}
+
+void write_output(FILE *output_file, char *buffer, int size) {
+    fwrite(buffer, 1, size, output_file);
+}
+
+int compress(FILE *input_file, FILE *output_file) {
+    char window[MAX_WINDOW_SIZE];
+    char lookahead[MAX_LOOKAHEAD_SIZE];
+    int window_size = 0;
+    int lookahead_size = read_input(input_file, lookahead, MAX_LOOKAHEAD_SIZE);
+    int bytes_written = 0;
+    while (lookahead_size > 0) {
+        int match_offset = 0;
+        int match_length = 0;
+        for (int i = 0; i < window_size; i++) {
+            int j = 0;
+            while (j < lookahead_size && i + j < window_size && window[i + j] == lookahead[j]) {
+                j++;
+            }
+            if (j > match_length) {
+                match_offset = i;
+                match_length = j;
+            }
+        }
+        if (match_length > 2) {
+            struct lz77_token token = { match_offset, match_length, lookahead[match_length] };
+            write_output(output_file, (char *)&token, sizeof(token));
+            bytes_written += sizeof(token);
+            memmove(window, &window[match_length], window_size - match_length);
+            memcpy(&window[window_size - match_length], lookahead, match_length);
+            window_size -= match_length;
+            lookahead_size = read_input(input_file, &lookahead[match_length], MAX_LOOKAHEAD_SIZE - match_length);
+            window_size += match_length;
+        } else {
+            write_output(output_file, lookahead, 1);
+            bytes_written++;
+            memmove(window, &window[1], window_size - 1);
+            window[window_size - 1] = lookahead[0];
+            window_size = (window_size < MAX_WINDOW_SIZE) ? window_size + 1 : window_size;
+            lookahead_size = read_input(input_file, lookahead, MAX_LOOKAHEAD_SIZE - 1);
+            lookahead[lookahead_size] = '\0';
+        }
+    }
+    return bytes_written;
+}
+
+int decompress(FILE *input_file, FILE *output_file) {
+    unsigned char buffer[BUFFER_SIZE];
+    int bytes_read, i;
+    struct lz77_triplet triplet;
+
+    while (1) {
+        // Read the triplet from the input file
+        bytes_read = fread(&triplet, sizeof(struct lz77_triplet), 1, input_file);
+        if (bytes_read != 1) {
+            if (feof(input_file)) {
+                // End of input file
+                break;
+            } else {
+                fprintf(stderr, "Error: Failed to read LZ77 triplet from input file.\n");
+                return 1;
+            }
+        }
+
+        // Copy the data from the buffer to the output file
+        for (i = 0; i < triplet.length; i++) {
+            buffer[i] = buffer[triplet.offset + i];
+        }
+
+        // Write the data to the output file
+        fwrite(buffer, 1, triplet.length, output_file);
+
+        // Write the new character to the buffer
+        buffer[triplet.length] = triplet.next_char;
+    }
+
+    return 0;
+}

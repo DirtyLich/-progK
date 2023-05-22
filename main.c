@@ -65,3 +65,25 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+
+//#include <stdio.h>
+
+int main() {
+    const char* letters[] = {
+        "  ######  ####### ######  #     # #######",
+        "  #     # #     # #     # #     # #      ",
+        "  #     # #     # #     # #     # #      ",
+        "  ######  #     # ######  #     # #####  ",
+        "  #       #     # #       #     # #      ",
+        "  #       #     # #       #     # #      ",
+        "  #       ####### #        #####  #######"
+    };
+    int i;
+
+    for (i = 0; i < 7; i++) {
+        printf("%s\n", letters[i]);
+    }
+
+    return 0;
+}
+

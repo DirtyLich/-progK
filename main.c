@@ -80,3 +80,13 @@ int main() {
     return 0;
 }
 
+
+
+printf("| %10s | %10s | %15s | %10s | %10s |\n", "Milimeters", "Centimeters", "Decimeters", "Meters", "Kilometers");
+printf("------------|------------|----------------|------------|------------|\n");
+printf("| %10s | %10s | %15s | %10s | %10s |\n", "Centimeters", "Milimeters", "Milimeters", "Milimeters", "Milimeters");
+printf("| %10s | %10s | %15s | %10s | %10s |\n", "Decimeters", "Decimeters", "Centimeters", "Centimeters", "Centimeters");
+printf("| %10s | %10s | %15s | %10s | %10s |\n", "Meters", "Meters", "Meters", "Decimeters", "Decimeters");
+printf("| %10s | %10s | %15s | %10s | %10s |\n", "Kilometers", "Kilometers", "Kilometers", "Kilometers", "Meters");
+printf("------------|------------|----------------|------------|------------|\n");
+
